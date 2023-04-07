@@ -66,11 +66,13 @@ FILE *fmemopen(void *__restrict buf, size_t size, const char *__restrict type) {
   }
 }*/
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b)) ? (a) : (b)
+#define MAX(a, b) ((a) < (b)) ? (b) : (a)
 
 struct MEMORYSTREAM {
   char *buf;
   size_t size;
+  size_t rsize;
   size_t pos;
 };
 
@@ -87,10 +89,11 @@ static int mswrite(void *cookie, char *buf, int len) {
   len = MIN(len, memorystream->size - memorystream->pos);
   memcpy(memorystream->buf + memorystream->pos, buf, len);
   memorystream->pos += len;
+  memorystream->rsize = MAX(memorystream->rsize, memorystream->pos);
   return len;
 }
 
-static long msseek(void *cookie, long offset, int whence) {
+static fpos_t msseek(void *cookie, fpos_t offset, int whence) {
   struct MEMORYSTREAM *memorystream = cookie;
   switch (whence) {
     case SEEK_SET:
@@ -100,7 +103,7 @@ static long msseek(void *cookie, long offset, int whence) {
       memorystream->pos += offset;
       break;
     case SEEK_END:
-      memorystream->pos = memorystream->size + offset;
+      memorystream->pos = memorystream->rsize + offset;
       break; 
   }
   return memorystream->pos;
@@ -116,6 +119,7 @@ FILE *fmemopen(void *__restrict buf, size_t size, const char *__restrict type) {
   if(!memorystream) return NULL;
   memorystream->buf = buf;
   memorystream->size = size;
+  memorystream->rsize = 0;
   memorystream->pos = 0;
   return funopen(memorystream, msread, mswrite, msseek, msclose);
 }
@@ -128,16 +132,19 @@ int main()
     perror("fmemopen");
     return 1;
   }
-  fprintf(file, "hello world");
-  char word[10] = "";
-  char target[] = "world";
-  while(fread(word, sizeof(char), 5, file)) {
+  fwrite("hello world\0", 12, 1, file);
+  char word[100] = "";
+  char target[] = "world\0";
+  fseek(file, 0, SEEK_SET);
+  while(fread(word, 5, 1, file)) {
     if(!strcmp(word, target))
       break;
     fseek(file, 1, SEEK_CUR);
   }
   printf("%s\n", word);
-  int len = fseek(file, 0, SEEK_END);
-  fread(word, sizeof(char), len, file);
+  fseek(file, 0, SEEK_END);
+  int len = ftell(file);
+  fseek(file, 0, SEEK_SET);
+  fread(word, len, 1, file);
   printf("%s\n", word);
 }
