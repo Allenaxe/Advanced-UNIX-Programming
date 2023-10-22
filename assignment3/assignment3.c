@@ -147,4 +147,5 @@ int main()
   fseek(file, 0, SEEK_SET);
   fread(word, len, 1, file);
   printf("%s\n", word);
+  fclose(file);
 }
