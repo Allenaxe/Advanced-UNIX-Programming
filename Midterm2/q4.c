@@ -52,12 +52,12 @@ int main(int argc, char const *argv[])
 
 struct ListNode* append_node(struct ListNode* head, int val){
 	if(head == NULL){
-    head = (struct ListNode *)malloc(sizeof(struct ListNode));
+        head = (struct ListNode *)malloc(sizeof(struct ListNode));
 		head->val = val;
 		head->next = NULL;
 		return head;	
 	}else { 
-		struct ListNode *newNode = (struct ListNode *)malloc(sizeof(struct ListNode));;
+		struct ListNode *newNode = (struct ListNode *)malloc(sizeof(struct ListNode));
 		struct ListNode *tail = head;
 		while(tail->next != NULL)tail = tail->next; 
 		newNode->val = val;
