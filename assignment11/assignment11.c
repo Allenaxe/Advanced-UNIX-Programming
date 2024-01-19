@@ -8,6 +8,7 @@
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <string.h>
 
 #define err_quit(fmt, ...)                        \
     do                                            \
@@ -85,5 +86,18 @@ void daemonize(const char *cmd)
     {
         syslog(LOG_ERR, "unexpected file descriptors %d %d %d", fd0, fd1, fd2);
         exit(1);
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    char buffer[50];
+    daemonize(argv[0]);
+    while(1) {
+        int fd = creat("assignment11.txt", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+        sprintf(buffer, "Login name: %s\n", getlogin());
+        write(fd, buffer, strlen(buffer));
+        close(fd);
+        sleep(60);
     }
 }
